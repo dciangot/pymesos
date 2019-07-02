@@ -60,29 +60,55 @@ class MinimalScheduler(Scheduler):
                       update.state)
 
 
-def main(master):
+def main(master, username, password):
     executor = Dict()
     executor.executor_id.value = 'MinimalExecutor'
     executor.name = executor.executor_id.value
-    executor.command.value = '%s %s' % (
-        sys.executable,
-        abspath(join(dirname(__file__), 'executor.py'))
-    )
+    executor.command.value = 'sleep 300'
+    # executor.command.environment.variables = [
+    #     dict(name="FRONTIER_PROXY", value=os.environ["FRONTIER_PROXY"]),
+    #     dict(name="CMS_LOCAL_SITE", value=os.environ["CMS_LOCAL_SITE"]),
+    #     dict(name="PROXY_CACHE", value=os.environ["PROXY_CACHE"]),
+    #     ]
+
     executor.resources = [
         dict(name='mem', type='SCALAR', scalar={'value': EXECUTOR_MEM}),
         dict(name='cpus', type='SCALAR', scalar={'value': EXECUTOR_CPUS}),
-    ]
+        ]
+
+    executor.container.type = "DOCKER"
+    executor.container.docker.image = "ubuntu"
+    #executor.container.docker.privileged = True
+    # executor.container.docker.network = "BRIDGE"
+    executor.container.docker.force_pull_image = True
+    # executor.container.docker.parameters = [
+    #                                     dict(
+    #                                       key="cap-add", 
+    #                                       value="SYS_ADMIN"
+    #                                       )
+    #                                     ]
+
+    executor.container.volumes = [
+        # dict(
+        #     mode="RO",
+        #     container_path="/sys/fs/cgroup",
+        #     host_path="/sys/fs/cgroup"
+        #     ),
+        ]
 
     framework = Dict()
     framework.user = getpass.getuser()
     framework.name = "MinimalFramework"
-    framework.hostname = socket.gethostname()
+    #framework.hostname = socket.gethostname()
+    framework.hostname = socket.gethostbyname(socket.gethostname())
 
     driver = MesosSchedulerDriver(
         MinimalScheduler(executor),
         framework,
         master,
-        use_addict=True,
+        principal=username,
+        secret=password,
+        use_addict=True
     )
 
     def signal_handler(signal, frame):
@@ -108,4 +134,4 @@ if __name__ == '__main__':
         print("Usage: {} <mesos_master>".format(sys.argv[0]))
         sys.exit(1)
     else:
-        main(sys.argv[1])
+        main(sys.argv[1], 'Mesos-user', 'Mesos-passwd')
