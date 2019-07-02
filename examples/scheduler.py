@@ -64,6 +64,7 @@ def main(master, username, password):
     executor = Dict()
     executor.executor_id.value = 'MinimalExecutor'
     executor.name = executor.executor_id.value
+    # TODO: setup process in container for updating task status
     executor.command.value = 'sleep 300'
     # executor.command.environment.variables = [
     #     dict(name="FRONTIER_PROXY", value=os.environ["FRONTIER_PROXY"]),
